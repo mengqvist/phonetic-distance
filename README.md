@@ -2,6 +2,8 @@
 
 A playful exploration of phonetic distances between words, with a focus on the NATO phonetic alphabet (alpha, bravo, charlie...). This project implements a feature-based approach to compare words based on their sounds rather than their spelling.
 
+**IMPORTANT:** I am not a linguist. This is a fun modelling project and the results should be taken with a grain of salt. It is not an authoritative source of how to correctly calculate phonetic distances.
+
 ## Overview
 
 The main components:
