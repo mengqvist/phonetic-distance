@@ -1,0 +1,17 @@
+name: phonetic-distance
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - jupyter
+  - pandas
+  - scikit-learn
+  - beautifulsoup4
+  - pip
+  - pip:
+    - eng_to_ipa
