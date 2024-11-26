@@ -67,74 +67,66 @@ FEATURE_WEIGHTS = np.array([
     1.0,      # Height: Vowel height is important
     1.0,      # Backness: Vowel backness is important
     0.5,      # Roundedness: Roundedness is less crucial
-    2.0])     # Consonant: Consonant vs vowel is very important
+    2.0,      # Consonant: Consonant vs vowel is very important
+    0.8       # Tense: Tenseness is moderately important (new)
+])
     
 FEATURES = {
-    # [voicing, place, manner, height, backness, roundedness, consonant/vowel]
+    # [voicing, place, manner, height, backness, roundedness, consonant/vowel, tense]
     # Voicing (0-1): voiceless -> voiced
-    # Place of articulation (0-6): bilabial -> labiodental -> dental -> alveolar -> postalveolar -> velar -> glottal
-    # Manner of articulation (0-6): plosive -> fricative -> nasal -> lateral -> approximant -> tap/trill -> affricate
+    # Place (0-6): bilabial -> labiodental -> dental -> alveolar -> postalveolar -> velar -> glottal
+    # Manner (0-6): plosive -> fricative -> nasal -> lateral -> approximant -> trill -> affricate
     # Height (0-3): low -> mid -> high
     # Backness (0-2): front -> central -> back
     # Roundedness (0-1): unrounded -> rounded
     # Consonant/vowel (0-1): vowel -> consonant
+    # Tense (0-1): lax -> tense
 
-    # Vowels (height, backness, roundedness are primary features)
-    'i': [1, 0, 0, 3, 0, 0, 0],  # high front unrounded (as in "see")
-    'ɪ': [1, 0, 0, 2, 0, 0, 0],  # near-high front unrounded (as in "sit") 
-    'e': [1, 0, 0, 2, 0, 0, 0],  # upper-mid front unrounded (as in "say")
-    'ɛ': [1, 0, 0, 1, 0, 0, 0],  # mid front unrounded (as in "bed")
-    'æ': [1, 0, 0, 0, 0, 0, 0],  # near-low front unrounded (as in "cat")
-    'a': [1, 0, 0, 0, 0, 0, 0],  # low front unrounded (as in "father")
-    'ɑ': [1, 0, 0, 0, 2, 0, 0],  # low back unrounded (as in "hot")
-    'ɒ': [1, 0, 0, 0, 2, 1, 0],  # low back rounded (as in British "lot")
-    'ɔ': [1, 0, 0, 1, 2, 1, 0],  # mid back rounded (as in "thought")
-    'o': [1, 0, 0, 2, 2, 1, 0],  # upper-mid back rounded (as in "go")
-    'ʊ': [1, 0, 0, 2, 2, 1, 0],  # near-high back rounded (as in "put")
-    'u': [1, 0, 0, 3, 2, 1, 0],  # high back rounded (as in "boot")
-    'y': [1, 0, 0, 3, 0, 1, 0],  # high front rounded (as in French "tu")
-    'ʏ': [1, 0, 0, 2, 0, 1, 0],  # near-high front rounded (as in German "hübsch")
-    'ø': [1, 0, 0, 2, 0, 1, 0],  # upper-mid front rounded (as in French "deux")
-    'œ': [1, 0, 0, 1, 0, 1, 0],  # mid front rounded (as in French "sœur")
-    'ə': [1, 0, 0, 1, 1, 0, 0],  # mid central unrounded (as in "about")
-    'ɜ': [1, 0, 0, 1, 1, 0, 0],  # mid central unrounded (as in British "bird")
-    'ɞ': [1, 0, 0, 1, 1, 1, 0],  # mid central rounded (as in Swedish "öga")
-    'ʌ': [1, 0, 0, 1, 2, 0, 0],  # low-mid back unrounded (as in "but")
-    
-    # Consonants (place and manner are primary features)
-    'p': [0, 0, 0, 0, 0, 0, 1],  # voiceless bilabial plosive (as in "pat")
-    'b': [1, 0, 0, 0, 0, 0, 1],  # voiced bilabial plosive (as in "bat")
-    't': [0, 2, 0, 0, 0, 0, 1],  # voiceless alveolar plosive (as in "tap")
-    'd': [1, 2, 0, 0, 0, 0, 1],  # voiced alveolar plosive (as in "dap")
-    'k': [0, 4, 0, 0, 0, 0, 1],  # voiceless velar plosive (as in "cat")
-    'g': [1, 4, 0, 0, 0, 0, 1],  # voiced velar plosive (as in "gap")
-    'q': [0, 5, 0, 0, 0, 0, 1],  # voiceless uvular plosive (as in Arabic "qalb")
-    'ɢ': [1, 5, 0, 0, 0, 0, 1],  # voiced uvular plosive (as in Arabic "Quran")
-    'ʔ': [0, 6, 0, 0, 0, 0, 1],  # glottal stop (as in "uh-oh")
-    'f': [0, 1, 1, 0, 0, 0, 1],  # voiceless labiodental fricative (as in "fat")
-    'v': [1, 1, 1, 0, 0, 0, 1],  # voiced labiodental fricative (as in "vat")
-    'θ': [0, 2, 1, 0, 0, 0, 1],  # voiceless dental fricative (as in "thin")
-    'ð': [1, 2, 1, 0, 0, 0, 1],  # voiced dental fricative (as in "this")
-    's': [0, 2, 1, 0, 0, 0, 1],  # voiceless alveolar fricative (as in "sat")
-    'z': [1, 2, 1, 0, 0, 0, 1],  # voiced alveolar fricative (as in "zip")
-    'ʃ': [0, 3, 1, 0, 0, 0, 1],  # voiceless postalveolar fricative (as in "ship")
-    'ʒ': [1, 3, 1, 0, 0, 0, 1],  # voiced postalveolar fricative (as in "measure")
-    'h': [0, 6, 1, 0, 0, 0, 1],  # voiceless glottal fricative (as in "hat")
-    'm': [1, 0, 2, 0, 0, 0, 1],  # bilabial nasal (as in "mat")
-    'n': [1, 2, 2, 0, 0, 0, 1],  # alveolar nasal (as in "nat")
-    'ŋ': [1, 4, 2, 0, 0, 0, 1],  # velar nasal (as in "sing")
-    'l': [1, 2, 3, 0, 0, 0, 1],  # alveolar lateral (as in "lip")
-    'ɹ': [1, 2, 4, 0, 0, 0, 1],  # alveolar approximant (as in "rat")
-    'j': [1, 3, 4, 0, 0, 0, 1],  # palatal approximant (as in "yes")
-    'w': [1, 4, 4, 0, 0, 1, 1],  # labial-velar approximant (as in "wet")
-    'ɾ': [1, 2, 5, 0, 0, 0, 1],  # alveolar tap (as in Spanish "pero")
-    'ʙ': [1, 0, 5, 0, 0, 0, 1],  # bilabial trill (as in Czech "brr")
-    'r': [1, 2, 5, 0, 0, 0, 1],  # alveolar trill (as in Spanish "perro")
-    'χ': [0, 5, 1, 0, 0, 0, 1],  # voiceless uvular fricative (as in German "Bach")
-    'ʁ': [1, 5, 1, 0, 0, 0, 1],  # voiced uvular fricative (as in French "rouge")
+    # Vowels
+    'i': [1, 0, 0, 3, 0, 0, 0, 1],  # high front unrounded tense (see)
+    'ɪ': [1, 0, 0, 3, 0, 0, 0, 0],  # high front unrounded lax (sit)
+    'e': [1, 0, 0, 2, 0, 0, 0, 1],  # upper-mid front unrounded tense (say)
+    'ɛ': [1, 0, 0, 2, 0, 0, 0, 0],  # mid front unrounded lax (bed)
+    'æ': [1, 0, 0, 1, 0, 0, 0, 0],  # near-low front unrounded lax (cat)
+    'ə': [1, 0, 0, 2, 1, 0, 0, 0],  # mid central unrounded lax (about)
+    'ʌ': [1, 0, 0, 1, 2, 0, 0, 0],  # low-mid back unrounded lax (but)
+    'ɑ': [1, 0, 0, 0, 2, 0, 0, 0],  # low back unrounded lax (hot)
+    'ɔ': [1, 0, 0, 1, 2, 1, 0, 0],  # low-mid back rounded lax (thought)
+    'o': [1, 0, 0, 2, 2, 1, 0, 1],  # upper-mid back rounded tense (go)
+    'ʊ': [1, 0, 0, 3, 2, 1, 0, 0],  # high back rounded lax (put)
+    'u': [1, 0, 0, 3, 2, 1, 0, 1],  # high back rounded tense (boot)
+
+    # Stops
+    'p': [0, 0, 0, 0, 0, 0, 1, 0],  # voiceless bilabial plosive (pat)
+    'b': [1, 0, 0, 0, 0, 0, 1, 0],  # voiced bilabial plosive (bat)
+    't': [0, 3, 0, 0, 0, 0, 1, 0],  # voiceless alveolar plosive (tap)
+    'd': [1, 3, 0, 0, 0, 0, 1, 0],  # voiced alveolar plosive (dap)
+    'k': [0, 5, 0, 0, 0, 0, 1, 0],  # voiceless velar plosive (cat)
+    'g': [1, 5, 0, 0, 0, 0, 1, 0],  # voiced velar plosive (gap)
+
+    # Fricatives
+    'f': [0, 1, 1, 0, 0, 0, 1, 0],  # voiceless labiodental fricative (fat)
+    'v': [1, 1, 1, 0, 0, 0, 1, 0],  # voiced labiodental fricative (vat)
+    'θ': [0, 2, 1, 0, 0, 0, 1, 0],  # voiceless dental fricative (thin)
+    'ð': [1, 2, 1, 0, 0, 0, 1, 0],  # voiced dental fricative (this)
+    's': [0, 3, 1, 0, 0, 0, 1, 0],  # voiceless alveolar fricative (sat)
+    'z': [1, 3, 1, 0, 0, 0, 1, 0],  # voiced alveolar fricative (zip)
+    'ʃ': [0, 4, 1, 0, 0, 0, 1, 0],  # voiceless postalveolar fricative (ship)
+    'ʒ': [1, 4, 1, 0, 0, 0, 1, 0],  # voiced postalveolar fricative (measure)
+    'h': [0, 6, 1, 0, 0, 0, 1, 0],  # voiceless glottal fricative (hat)
+
+    # Nasals
+    'm': [1, 0, 2, 0, 0, 0, 1, 0],  # bilabial nasal (mat)
+    'n': [1, 3, 2, 0, 0, 0, 1, 0],  # alveolar nasal (nat)
+    'ŋ': [1, 5, 2, 0, 0, 0, 1, 0],  # velar nasal (sing)
+
+    # Approximants and Liquids
+    'l': [1, 3, 3, 0, 0, 0, 1, 0],  # alveolar lateral (lip)
+    'ɹ': [1, 3, 4, 0, 0, 0, 1, 0],  # alveolar approximant (rat), alias for r
+    'j': [1, 4, 4, 0, 0, 0, 1, 0],  # palatal approximant (yes), alias for y
+    'w': [1, 5, 4, 0, 0, 1, 1, 0],  # labial-velar approximant (wet)
 
     # Affricates
-    # Note: Affricates combine features of plosives and fricatives
-    'ʧ': [0, 3, 6, 0, 0, 0, 1],  # voiceless postalveolar affricate (as in "church")
-    'ʤ': [1, 3, 6, 0, 0, 0, 1],  # voiced postalveolar affricate (as in "judge")
+    'ʧ': [0, 4, 6, 0, 0, 0, 1, 0],  # voiceless postalveolar affricate (church)
+    'ʤ': [1, 4, 6, 0, 0, 0, 1, 0],  # voiced postalveolar affricate (judge)
 }
