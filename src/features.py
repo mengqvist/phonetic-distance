@@ -9,72 +9,78 @@ logger = setup_logger(__name__)
 
 
 class PhoneticFeatureEncoder:
-   def __init__(self):
-       # Extract unique values for each feature position
-       features_array = np.array(list(FEATURES.values()))
-       self.feature_categories = [
-           sorted(set(features_array[:, i])) 
-           for i in range(features_array.shape[1])
-       ]
-       
-       # Create and fit one-hot encoders for each feature
-       self.encoders = [
-           OneHotEncoder(categories=[cats], sparse_output=False).fit(np.array(cats).reshape(-1, 1))
-           for cats in self.feature_categories
-       ]
+    def __init__(self):
+        # Extract unique values for each feature position
+        features_array = np.array(list(FEATURES.values()))
+        self.feature_categories = [
+            sorted(set(features_array[:, i])) 
+            for i in range(features_array.shape[1])
+        ]
+        
+        # Create and fit one-hot encoders for each feature
+        self.encoders = [
+            OneHotEncoder(categories=[cats], sparse_output=False).fit(np.array(cats).reshape(-1, 1))
+            for cats in self.feature_categories
+        ]
 
-       # Initialize weights - expand to match binary feature vector length
-       expanded_weights = []
-       for i, cats in enumerate(self.feature_categories):
-           # Repeat each weight by number of categories for that feature
-           expanded_weights.extend([FEATURE_WEIGHTS[i]] * len(cats))
-       self.weights = np.array(expanded_weights)
+        # Initialize weights - expand to match binary feature vector length
+        expanded_weights = []
+        for i, cats in enumerate(self.feature_categories):
+            # Repeat each weight by number of categories for that feature
+            expanded_weights.extend([FEATURE_WEIGHTS[i]] * len(cats))
+        self.weights = np.array(expanded_weights)
 
-   def phoneme_to_categorical(self, phoneme: str) -> list:
-       """Get the categorical feature vector for a phoneme."""
-       if not isinstance(phoneme, str):
-           raise TypeError(f"Phoneme must be a string, got {type(phoneme)}")
-           
-       if not phoneme or len(phoneme) > 1:
-           raise ValueError(f"Invalid phoneme: {phoneme}")
-           
-       if phoneme not in FEATURES:
-           raise ValueError(f"Unknown phoneme: {phoneme}")
-       
-       return FEATURES[phoneme]
+    def phoneme_to_categorical(self, phoneme: str) -> list:
+        """Get the categorical feature vector for a phoneme."""
+        if not isinstance(phoneme, str):
+            raise TypeError(f"Phoneme must be a string, got {type(phoneme)}")
+            
+        # Handle aliases
+        if phoneme == 'y':
+            phoneme = 'j'
+        elif phoneme == 'r':
+            phoneme = 'ɹ'
 
-   def phoneme_to_binary(self, phoneme: str, weighted: bool = False) -> np.ndarray:
-       """Get the binary feature vector for a phoneme."""
-       features = self.phoneme_to_categorical(phoneme)
+        if not phoneme or len(phoneme) > 1:
+            raise ValueError(f"Invalid phoneme: {phoneme}")
+            
+        if phoneme not in FEATURES:
+            print(repr(phoneme))
+            raise ValueError(f"Unknown phoneme: {phoneme}")
+        
+        return FEATURES[phoneme]
 
-       # Create binary vectors and then concatenate
-       binary_vectors = []
-       for encoder, feature in zip(self.encoders, features):
-            binary = encoder.transform([[feature]])
-            binary_vectors.append(binary.flatten())  # flatten each binary vector
-       binary = np.concatenate(binary_vectors)
+    def phoneme_to_binary(self, phoneme: str, weighted: bool = False) -> np.ndarray:
+        """Get the binary feature vector for a phoneme."""
+        features = self.phoneme_to_categorical(phoneme)
 
-       if weighted:
-           binary = binary * self.weights
-       
-       return binary
-   
-   def binary_to_categorical(self, binary_vector: np.ndarray) -> list:
-       """Convert a binary feature vector back to categorical features."""
-       if len(binary_vector) != sum(len(cats) for cats in self.feature_categories):
-           raise ValueError("Invalid binary vector length")
-       
-       # Split binary vector into segments for each feature
-       start = 0
-       categorical = []
-       for encoder, cats in zip(self.encoders, self.feature_categories):
-           length = len(cats)
-           segment = binary_vector[start:start + length]
-           categorical.append(int(encoder.inverse_transform([segment])[0][0]))
-           start += length
-           
-       return categorical
+        # Create binary vectors and then concatenate
+        binary_vectors = []
+        for encoder, feature in zip(self.encoders, features):
+                binary = encoder.transform([[feature]])
+                binary_vectors.append(binary.flatten())  # flatten each binary vector
+        binary = np.concatenate(binary_vectors)
 
+        if weighted:
+            binary = binary * self.weights
+        
+        return binary
+    
+    def binary_to_categorical(self, binary_vector: np.ndarray) -> list:
+        """Convert a binary feature vector back to categorical features."""
+        if len(binary_vector) != sum(len(cats) for cats in self.feature_categories):
+            raise ValueError("Invalid binary vector length")
+        
+        # Split binary vector into segments for each feature
+        start = 0
+        categorical = []
+        for encoder, cats in zip(self.encoders, self.feature_categories):
+            length = len(cats)
+            segment = binary_vector[start:start + length]
+            categorical.append(int(encoder.inverse_transform([segment])[0][0]))
+            start += length
+            
+        return categorical
 
 
 class WordEncoder(object):
