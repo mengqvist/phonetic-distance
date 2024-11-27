@@ -25,11 +25,12 @@ def feature_vector_distance(v1: np.ndarray, v2: np.ndarray) -> float:
 class PhonemeSubstitutionMatrix(object):
     """Class for creating, saving and loading phoneme substitution matrices."""
     
-    def __init__(self, weighted: bool = True):
+    def __init__(self, weighted: bool = True) -> None:
         """Initialize the substitution matrix.
         
         Args:
-            weighted: Whether to use weighted features when creating matrix
+            weighted: Whether to use weighted features when creating matrix.
+                     Defaults to True.
         """
         self.save_dir = get_project_root() / 'data'
         self.encoder = PhoneticFeatureEncoder()
@@ -45,8 +46,15 @@ class PhonemeSubstitutionMatrix(object):
             self.mapping_file = self.save_dir / 'substitution_matrix_mapping.csv'
         self.load()
         
-    def _create_matrix(self):
-        """Create and sort the substitution matrix using the encoder."""
+    def _create_matrix(self) -> None:
+        """Create and sort the substitution matrix using the encoder.
+        
+        Creates a matrix of phoneme distances by:
+        1. Getting all phonemes from FEATURES dictionary
+        2. Sorting phonemes by their features
+        3. Computing distances between binary feature vectors
+        4. Saving the matrix and phoneme mapping to files
+        """
         # Get all phonemes from our FEATURES dictionary
         phonemes = list(FEATURES.keys())
         
@@ -83,8 +91,11 @@ class PhonemeSubstitutionMatrix(object):
         self.matrix = np.round(self.matrix, decimals=2)
         self.save()
 
-    def save(self):
+    def save(self) -> None:
         """Save the substitution matrix and phoneme mapping to CSV files.
+        
+        Raises:
+            ValueError: If matrix is not initialized.
         """
         if self.matrix is None or self.phoneme_to_index is None:
             raise ValueError("Matrix not initialized")
@@ -104,8 +115,11 @@ class PhonemeSubstitutionMatrix(object):
         pd.DataFrame.from_dict(self.phoneme_to_index, orient='index', 
                              columns=['index']).to_csv(self.mapping_file)
     
-    def load(self):
+    def load(self) -> None:
         """Load a substitution matrix and phoneme mapping from CSV files.
+        
+        Creates a new matrix if one does not exist at the specified path.
+        Also adds aliases to handle 'y'/'j' and 'r'/'ɹ' as the same phonemes.
         """
         # Create matrix if not already created
         if not self.matrix_file.exists():
@@ -123,14 +137,28 @@ class PhonemeSubstitutionMatrix(object):
         self.phoneme_to_index['y'] = self.phoneme_to_index['j']
         self.phoneme_to_index['r'] = self.phoneme_to_index['ɹ']
     
-    def get_matrix(self):
-        """Get the substitution matrix."""
+    def get_matrix(self) -> np.ndarray:
+        """Get the substitution matrix.
+        
+        Returns:
+            np.ndarray: The phoneme substitution matrix.
+            
+        Raises:
+            ValueError: If matrix is not initialized.
+        """
         if self.matrix is None:
             raise ValueError("Matrix not initialized")
         return self.matrix
 
-    def visualize(self):
-        """Create a heatmap visualization of the substitution matrix."""
+    def visualize(self) -> None:
+        """Create a heatmap visualization of the substitution matrix.
+        
+        Displays a heatmap using seaborn where smaller distances are shown
+        in darker colors.
+        
+        Raises:
+            ValueError: If matrix is not initialized.
+        """
         if self.matrix is None or self.phoneme_to_index is None:
             raise ValueError("Matrix not initialized")
                     
