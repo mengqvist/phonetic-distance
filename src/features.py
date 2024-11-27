@@ -44,6 +44,7 @@ FEATURES = {
     'ə': [1, 0, 0, 2, 1, 0, 0, 0],  # mid central unrounded lax (about)
     'ʌ': [1, 0, 0, 1, 2, 0, 0, 0],  # low-mid back unrounded lax (but)
     'ɑ': [1, 0, 0, 0, 2, 0, 0, 0],  # low back unrounded lax (hot)
+    'a': [1, 0, 0, 0, 0, 0, 0, 0],  # low back unrounded lax (light, similar to 'ɑ')
     'ɔ': [1, 0, 0, 1, 2, 1, 0, 0],  # low-mid back rounded lax (thought)
     'o': [1, 0, 0, 2, 2, 1, 0, 1],  # upper-mid back rounded tense (go)
     'ʊ': [1, 0, 0, 3, 2, 1, 0, 0],  # high back rounded lax (put)
