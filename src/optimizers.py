@@ -5,23 +5,6 @@ from src.distances import WordAligner
 
 # Example usage:
 """
-
-
-# Initialize
-
-optimizer = GapPenaltyOptimizer(word_encoder)
-
-# Find optimal penalty
-penalties = 
-best_penalty, results = optimizer.find_optimal_penalty(penalties)
-
-# Analyze results
-analysis = optimizer.analyze_results(results)
-
-# Print summary
-print(f"Best gap penalty: {best_penalty}")
-print(f"Best score: {analysis['best_score']}")
-
 # Example of accessing detailed results
 for penalty in penalties:
     print(f"\nPenalty {penalty}:")
@@ -48,6 +31,7 @@ class GapPenaltyOptimizer(object):
         
         # Test cases where no gaps should appear
         self.no_gap_cases = [
+            # Phonetic differences
             ('phone', 'foam', 0),
             ('light', 'right', 0),
             ('cat', 'kit', 0),
@@ -55,7 +39,32 @@ class GapPenaltyOptimizer(object):
             ('sin', 'sun', 0),
             ('pig', 'peg', 0),
             ('peak', 'pick', 0),
-            ('pool', 'pull', 0)
+            ('pool', 'pull', 0),
+
+            # Voicing differences
+            ('pat', 'bat', 0),
+            ('tune', 'dune', 0),
+            ('cap', 'gap', 0),
+
+            # Place of articulation differences
+            ('tap', 'cap', 0),
+            ('map', 'nap', 0),
+            ('tip', 'sip', 0),
+
+            # Manner of articulation differences
+            ('tip', 'ship', 0),
+            ('mat', 'bat', 0),
+            ('rate', 'late', 0),
+
+            # Vowel height differences
+            ('bit', 'bet', 0),
+            ('seat', 'sit', 0),
+            ('put', 'pot', 0),
+
+            # Vowel backness differences
+            ('bit', 'but', 0),
+            ('hat', 'hot', 0),
+            ('cut', 'cot', 0)
         ]
         
         # Test cases where gaps should appear
@@ -65,12 +74,17 @@ class GapPenaltyOptimizer(object):
             ('smile', 'mile', 1),   # 1 gap at start
             ('spark', 'park', 1),   # 1 gap at start
             ('stamp', 'tap', 2),    # 2 gaps (start and end)
-            ('spring', 'ping', 2)   # 2 gaps at start
+            ('spring', 'ping', 2),   # 2 gaps at start
+            ('tip', 'tippy', 1),     # 1 gap in middle
+            ('tip', 'tippy', 1),     # 1 gap in middle
         ]
 
-        self.find_optimal_penalty()
+        self._find_optimal_penalty()
+        self._analyze_results()
+        print(f'Best penalty: {self.best_penalty}')
+        print(f'Best score: {self.best_score}')
         
-    def evaluate_single_case(self, word1, word2, expected_gaps, gap_penalty):
+    def _evaluate_single_case(self, word1, word2, expected_gaps, gap_penalty):
         """Evaluate alignment for a single test case.
         
         Args:
@@ -113,7 +127,7 @@ class GapPenaltyOptimizer(object):
             
         results = []
         for word1, word2, expected_gaps in cases:
-            result = self.evaluate_single_case(word1, word2, expected_gaps, gap_penalty)
+            result = self._evaluate_single_case(word1, word2, expected_gaps, gap_penalty)
             results.append(result)
         
         # Calculate overall score
@@ -121,7 +135,7 @@ class GapPenaltyOptimizer(object):
         
         return score, results
     
-    def find_optimal_penalty(self):
+    def _find_optimal_penalty(self):
         """Find the optimal gap penalty by testing a range of values.
         """
         best_score = -1
@@ -143,7 +157,7 @@ class GapPenaltyOptimizer(object):
         self.best_score = best_score
         self.all_results = all_results
     
-    def analyze_results(self):
+    def _analyze_results(self):
         """Analyze optimization results in detail.
 
                 Returns:
@@ -170,6 +184,7 @@ class GapPenaltyOptimizer(object):
                 if case:
                     case_results[penalty] = {
                         'correct': case['correct'],
+                        'expected_gaps': case['expected_gaps'],
                         'actual_gaps': case['actual_gaps'],
                         'alignment': case['alignment']
                     }
@@ -177,4 +192,15 @@ class GapPenaltyOptimizer(object):
         
         self.analysis = analysis
 
-
+    def print_analysis(self):
+        print(f'Penalties tested: {self.analysis["penalties_tested"]}')
+        print(f'Scores: {self.analysis["scores"]}')
+        print(f'Best penalty: {self.analysis["best_penalty"]}')
+        print(f'Best score: {self.analysis["best_score"]}')
+        for case in self.analysis["per_case_analysis"]:
+            print(f'Case: {case}')
+            for penalty in self.analysis["per_case_analysis"][case]:
+                print(f'Penalty: {penalty}')
+                print(f'Actual gaps: {self.analysis["per_case_analysis"][case][penalty]["actual_gaps"]}')
+                print(f'Alignment: {self.analysis["per_case_analysis"][case][penalty]["alignment"]}')
+                print(f'Correct: {self.analysis["per_case_analysis"][case][penalty]["correct"]}')
