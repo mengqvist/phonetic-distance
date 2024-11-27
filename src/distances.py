@@ -44,7 +44,7 @@ class PhonemeSubstitutionMatrix(object):
         else:
             self.matrix_file = self.save_dir / 'substitution_matrix.csv'
             self.mapping_file = self.save_dir / 'substitution_matrix_mapping.csv'
-        self.load()
+        self._load()
         
     def _create_matrix(self) -> None:
         """Create and sort the substitution matrix using the encoder.
@@ -89,9 +89,9 @@ class PhonemeSubstitutionMatrix(object):
                 
         # Round to 2 decimals and save
         self.matrix = np.round(self.matrix, decimals=2)
-        self.save()
+        self._save()
 
-    def save(self) -> None:
+    def _save(self) -> None:
         """Save the substitution matrix and phoneme mapping to CSV files.
         
         Raises:
@@ -115,7 +115,7 @@ class PhonemeSubstitutionMatrix(object):
         pd.DataFrame.from_dict(self.phoneme_to_index, orient='index', 
                              columns=['index']).to_csv(self.mapping_file)
     
-    def load(self) -> None:
+    def _load(self) -> None:
         """Load a substitution matrix and phoneme mapping from CSV files.
         
         Creates a new matrix if one does not exist at the specified path.
@@ -163,12 +163,20 @@ class PhonemeSubstitutionMatrix(object):
             raise ValueError("Matrix not initialized")
                     
         phonemes = list(self.phoneme_to_index.keys())
-        plt.figure(figsize=(15, 15))
-        sns.heatmap(self.matrix, 
+        # Ignore aliases
+        phonemes = [p for p in phonemes if p not in ['y', 'r']]
+
+        plt.figure(figsize=(8, 6))
+        heatmap = sns.heatmap(self.matrix, 
                    xticklabels=phonemes,
                    yticklabels=phonemes,
-                   cmap='viridis_r')  # _r makes smaller distances darker
+                   cmap='viridis_r'
+                   )  # _r makes smaller distances darker
+        plt.xticks(fontsize=8)
+        plt.yticks(fontsize=8)
         plt.title('Phoneme Substitution Costs')
+        colorbar = heatmap.collections[0].colorbar
+        colorbar.set_label('Phonetic distance')
         plt.show()
 
 
