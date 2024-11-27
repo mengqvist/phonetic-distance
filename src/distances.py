@@ -183,7 +183,7 @@ class PhonemeSubstitutionMatrix(object):
 class WordAligner(object):
     """Class for computing alignments between words using phoneme substitution costs."""
     
-    def __init__(self, weighted: bool = True, gap_penalty: float = 1.0):
+    def __init__(self, weighted: bool = True, gap_penalty: float = 1.5):
         """Initialize the aligner.
         
         Args:
@@ -206,6 +206,7 @@ class WordAligner(object):
             where alignment is a list of (phoneme1, phoneme2) pairs,
             with None representing gaps in the alignment
         """
+
         # Convert words to phonemes
         phonemes1 = self.encoder._word_to_phonemes(word1)
         phonemes2 = self.encoder._word_to_phonemes(word2)
@@ -246,7 +247,7 @@ class WordAligner(object):
                 ]
                 dp[i, j] = min(costs)
                 moves[i, j] = np.argmin(costs)
-        
+                
         # Backtrack to find alignment
         alignment = []
         i, j = m, n
@@ -258,9 +259,11 @@ class WordAligner(object):
             elif i > 0 and moves[i, j] == 1:  # up
                 alignment.append((phonemes1[i-1], None))
                 i -= 1
-            else:  # left
+            elif j > 0:  # left
                 alignment.append((None, phonemes2[j-1]))
                 j -= 1
+            else:
+                break  # Safety check to avoid index errors
                 
         # Reverse alignment since we backtracked
         alignment.reverse()
