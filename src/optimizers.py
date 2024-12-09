@@ -1,20 +1,140 @@
 
-from src.features import WordEncoder
+from src.features import WordEncoder, FEATURE_WEIGHTS
 from src.distances import WordAligner
 
+import numpy as np
+from scipy import optimize
+import numpy as np
+from scipy import optimize
+from typing import Optional, Tuple
 
-# Example usage:
-"""
-# Example of accessing detailed results
-for penalty in penalties:
-    print(f"\nPenalty {penalty}:")
-    score = results[penalty]['score']
-    print(f"Overall score: {score:.2f}")
-    
-    # Print some example alignments
-    for detail in results[penalty]['details'][:3]:  # First 3 cases
-        print(f"{detail['word1']} - {detail['word2']}: {detail['alignment']}")
-"""
+
+class FeatureOptimizer:
+    def __init__(
+        self, 
+        consonant_features: np.ndarray,
+        vowel_features: np.ndarray,
+        consonant_confusion: np.ndarray,
+        vowel_confusion: np.ndarray
+    ) -> None:
+        """Initialize optimizer with features and confusion matrices for both consonants and vowels.
+        
+        Args:
+            consonant_features: Array of feature vectors for consonants
+            vowel_features: Array of feature vectors for vowels
+            consonant_confusion: Raw consonant confusion probability matrix
+            vowel_confusion: Raw vowel confusion probability matrix
+        """
+        self.consonant_features = consonant_features
+        self.vowel_features = vowel_features
+        
+        # Symmetrize and normalize both confusion matrices
+        self.consonant_confusion = self._normalize_confusion(consonant_confusion)
+        self.vowel_confusion = self._normalize_confusion(vowel_confusion)
+
+    def _normalize_confusion(self, matrix: np.ndarray) -> np.ndarray:
+        """Symmetrize and normalize a confusion matrix.
+        
+        Args:
+            matrix: Raw confusion matrix
+            
+        Returns:
+            Symmetrized and normalized confusion matrix
+        """
+        symmetric = (matrix + matrix.T) / 2
+        row_sums = symmetric.sum(axis=1, keepdims=True)
+        return symmetric / row_sums
+
+    def predict_confusions(
+        self,
+        features: np.ndarray,
+        params: np.ndarray
+    ) -> np.ndarray:
+        """Predict confusion probabilities for a set of features.
+        
+        Args:
+            features: Feature vectors for phonemes
+            params: Array containing feature weights, threshold and steepness parameters
+            
+        Returns:
+            Predicted confusion probability matrix
+        """
+        weights = params[:-2]
+        threshold = params[-2]
+        steepness = params[-1]
+        
+        n_phonemes = len(features)
+        predicted = np.zeros((n_phonemes, n_phonemes))
+        
+        # Compute distances and apply sigmoid threshold
+        for i in range(n_phonemes):
+            for j in range(n_phonemes):
+                distance = np.sqrt(np.sum(weights * (features[i] - features[j])**2))
+                similarity = 1 / (1 + np.exp(steepness * (distance - threshold)))
+                predicted[i,j] = similarity
+                
+        # Normalize
+        return predicted / predicted.sum(axis=1, keepdims=True)
+
+    def _kl_divergence(self, actual: np.ndarray, predicted: np.ndarray) -> float:
+        """Compute KL divergence between actual and predicted distributions.
+        
+        Args:
+            actual: True probability distribution
+            predicted: Predicted probability distribution
+            
+        Returns:
+            KL divergence value
+        """
+        epsilon = 1e-10  # Small constant to avoid log(0)
+        return np.sum(actual * np.log((actual + epsilon)/(predicted + epsilon)))
+
+    def loss(self, params: np.ndarray) -> float:
+        """Compute combined loss for consonant and vowel confusions.
+        
+        Args:
+            params: Array containing feature weights, threshold and steepness parameters
+            
+        Returns:
+            Combined KL divergence loss value
+        """
+        # Predict both consonant and vowel confusions
+        pred_consonants = self.predict_confusions(self.consonant_features, params)
+        pred_vowels = self.predict_confusions(self.vowel_features, params)
+        
+        # Compute loss for each and combine
+        consonant_loss = self._kl_divergence(self.consonant_confusion, pred_consonants)
+        vowel_loss = self._kl_divergence(self.vowel_confusion, pred_vowels)
+        
+        return consonant_loss + vowel_loss
+
+    def optimize(self, 
+                 initial_weights: Optional[np.ndarray] = FEATURE_WEIGHTS, 
+                 initial_threshold: Optional[float] = 2.0, 
+                 initial_steepness: Optional[float] = 5.0) -> Tuple[np.ndarray, float, float]:
+        """Find optimal parameters using scipy.optimize.
+        
+        Args:
+            initial_weights: Optional initial feature weights. Defaults to FEATURE_WEIGHTS.
+            initial_threshold: Optional initial threshold value. Defaults to 2.0.
+            initial_steepness: Optional initial steepness value. Defaults to 5.0.
+            
+        Returns:
+            Tuple containing:
+                - Optimized feature weights array
+                - Optimized threshold value
+                - Optimized steepness value
+        """
+        x0 = np.concatenate([initial_weights, [initial_threshold, initial_steepness]])  # Add initial threshold and steepness
+        bounds = [(0.1, None)] * len(x0)  # All parameters > 0.1
+        
+        result = optimize.minimize(
+            self.loss, x0,
+            method='L-BFGS-B',
+            bounds=bounds
+        )
+        
+        return result.x[:-2], result.x[-2], result.x[-1]  # weights, threshold, steepness
 
 
 class GapPenaltyOptimizer(object):
